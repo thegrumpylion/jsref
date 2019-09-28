@@ -32,6 +32,7 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
+	fmt.Println("struct", t)
 	m := map[string]interface{}{}
 	var err error
 	for i := 0; i < t.NumField(); i++ {
@@ -73,6 +74,7 @@ func mapToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
+	fmt.Println("map", t)
 	kt := t.Elem()
 	if !isString(kt) {
 		return js.Null(), fmt.Errorf("map key must be string not %s", kt)
@@ -115,6 +117,7 @@ func arrayToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
+	fmt.Println("arr", t)
 	arr := []interface{}{}
 	var err error
 	var val js.Value
@@ -143,5 +146,6 @@ func scalarToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
+	fmt.Println("scalar", t)
 	return js.ValueOf(v.Interface()), nil
 }
