@@ -6,6 +6,7 @@ import (
 	"syscall/js"
 )
 
+// Marshal to js.Value
 func Marshal(i interface{}) (js.Value, error) {
 	t := reflect.TypeOf(i)
 	v := reflect.ValueOf(i)
@@ -32,7 +33,6 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
-	fmt.Println("struct", t)
 	m := map[string]interface{}{}
 	var err error
 	for i := 0; i < t.NumField(); i++ {
@@ -47,14 +47,14 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 			ft = ft.Elem()
 		}
 		switch {
-		case isScalar(t):
-			m[fld.Name], err = scalarToJSValue(v)
-		case isArray(t):
-			m[fld.Name], err = arrayToJSValue(v)
-		case isMap(t):
-			m[fld.Name], err = mapToJSValue(v)
-		case isStruct(t):
-			m[fld.Name], err = structToJSValue(v)
+		case isScalar(ft):
+			m[fld.Name], err = scalarToJSValue(fv)
+		case isArray(ft):
+			m[fld.Name], err = arrayToJSValue(fv)
+		case isMap(ft):
+			m[fld.Name], err = mapToJSValue(fv)
+		case isStruct(ft):
+			m[fld.Name], err = structToJSValue(fv)
 		default:
 			return js.Null(), fmt.Errorf("unknown type: %s", ft.String())
 		}
@@ -74,7 +74,6 @@ func mapToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
-	fmt.Println("map", t)
 	kt := t.Elem()
 	if !isString(kt) {
 		return js.Null(), fmt.Errorf("map key must be string not %s", kt)
@@ -88,14 +87,15 @@ func mapToJSValue(v reflect.Value) (js.Value, error) {
 			return js.Null(), err
 		}
 		kname := kn.String()
+		et := t.Elem()
 		switch {
-		case isScalar(t):
+		case isScalar(et):
 			m[kname], err = scalarToJSValue(val)
-		case isArray(t):
+		case isArray(et):
 			m[kname], err = arrayToJSValue(val)
-		case isMap(t):
+		case isMap(et):
 			m[kname], err = mapToJSValue(val)
-		case isStruct(t):
+		case isStruct(et):
 			m[kname], err = structToJSValue(val)
 		default:
 			return js.Null(), fmt.Errorf("unknown type: %s", t.String())
@@ -117,20 +117,20 @@ func arrayToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
-	fmt.Println("arr", t)
 	arr := []interface{}{}
 	var err error
 	var val js.Value
+	et := t.Elem()
 	for i := 0; i < v.Len(); i++ {
 		switch {
-		case isScalar(t):
-			val, err = scalarToJSValue(v)
-		case isArray(t):
-			val, err = arrayToJSValue(v)
-		case isMap(t):
-			val, err = mapToJSValue(v)
-		case isStruct(t):
-			val, err = structToJSValue(v)
+		case isScalar(et):
+			val, err = scalarToJSValue(v.Index(i))
+		case isArray(et):
+			val, err = arrayToJSValue(v.Index(i))
+		case isMap(et):
+			val, err = mapToJSValue(v.Index(i))
+		case isStruct(et):
+			val, err = structToJSValue(v.Index(i))
 		}
 		if err != nil {
 			return js.Null(), err
@@ -146,6 +146,5 @@ func scalarToJSValue(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
-	fmt.Println("scalar", t)
 	return js.ValueOf(v.Interface()), nil
 }
