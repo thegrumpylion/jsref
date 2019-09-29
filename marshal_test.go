@@ -98,7 +98,27 @@ func TestMarshalArray(t *testing.T) {
 	}
 }
 
+func TestMarshalMap(t *testing.T) {
+	require := require.New(t)
+
+	in := map[string]string{
+		"ena":  "one",
+		"dio":  "two",
+		"tria": "three",
+	}
+	out, err := Marshal(in)
+
+	require.Nil(err)
+	require.Equal(true, IsObject(out))
+
+	for _, k := range ObjectKeys(out) {
+		require.Equal(in[k], out.Get(k).String())
+	}
+}
+
 func TestMarshalStruct(t *testing.T) {
+	require := require.New(t)
+
 	lst := []string{"sdf", "eeee"}
 	s := struct {
 		Name string
@@ -110,8 +130,6 @@ func TestMarshalStruct(t *testing.T) {
 		List: lst,
 	}
 	out, err := Marshal(s)
-
-	require := require.New(t)
 
 	require.Nil(err)
 	require.Equal(true, IsObject(out))

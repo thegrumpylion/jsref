@@ -39,6 +39,14 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 		fld := t.Field(i)
 		fv := v.Field(i)
 		ft := fld.Type
+		name := fld.Name
+		tag := parseTag(fld.Tag)
+		if tag.ignore {
+			continue
+		}
+		if tag.name != "" {
+			name = tag.name
+		}
 		if isPtr(ft) {
 			if !fv.IsValid() {
 				continue
@@ -48,13 +56,13 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 		}
 		switch {
 		case isScalar(ft):
-			m[fld.Name], err = scalarToJSValue(fv)
+			m[name], err = scalarToJSValue(fv)
 		case isArray(ft):
-			m[fld.Name], err = arrayToJSValue(fv)
+			m[name], err = arrayToJSValue(fv)
 		case isMap(ft):
-			m[fld.Name], err = mapToJSValue(fv)
+			m[name], err = mapToJSValue(fv)
 		case isStruct(ft):
-			m[fld.Name], err = structToJSValue(fv)
+			m[name], err = structToJSValue(fv)
 		default:
 			return js.Null(), fmt.Errorf("unknown type: %s", ft.String())
 		}

@@ -48,7 +48,7 @@ func TestUnamrshalStruct(t *testing.T) {
 	})
 	out := &struct {
 		Ena  string
-		Dio  bool
+		Dio  bool `jsref:"dio"`
 		Tria int
 	}{}
 	err := Unmarshal(out, obj)

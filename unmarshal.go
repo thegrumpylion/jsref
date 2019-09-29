@@ -44,6 +44,14 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 		fld := t.Field(i)
 		fv := v.Field(i)
 		ft := fld.Type
+		name := fld.Name
+		tag := parseTag(fld.Tag)
+		if tag.ignore {
+			continue
+		}
+		if tag.name != "" {
+			name = tag.name
+		}
 		if isPtr(ft) {
 			if !fv.IsValid() {
 				continue
@@ -51,10 +59,7 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 			fv = fv.Elem()
 			ft = ft.Elem()
 		}
-		jsVal := val.Get(fld.Name)
-		if !IsValid(jsVal) {
-			jsVal = val.Get(lowFirst(fld.Name))
-		}
+		jsVal := val.Get(name)
 		if !IsValid(jsVal) {
 			return nil
 		}

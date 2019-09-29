@@ -138,3 +138,22 @@ func lowFirst(str string) string {
 	}
 	return ""
 }
+
+type tagVal struct {
+	ignore bool
+	name   string
+}
+
+func parseTag(tag reflect.StructTag) tagVal {
+	s := tag.Get("jsref")
+	switch s {
+	case "-":
+		return tagVal{
+			ignore: true,
+		}
+	default:
+		return tagVal{
+			name: s,
+		}
+	}
+}
