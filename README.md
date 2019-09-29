@@ -1,6 +1,5 @@
-# jsref
 
-Painlessly go from go to js.Value and back.
+Marshal & Unmarshal go to js.Value
 
 ## Example
 
@@ -102,9 +101,11 @@ Addr.Num 2
 ---------
 ```
 
-You can run the test by issuing: `GOOS=js GOARCH=wasm go test -v -run TestExample`
+You can run the test by issuing:
 
-More on how to setup your system to run tests with webassembly can be found here: https://github.com/golang/go/wiki/WebAssembly#running-tests-in-the-browser
+`GOOS=js GOARCH=wasm go test -v -run TestExample`
+
+More on how to setup your system to run tests with webassembly can be found here: [running-tests-in-the-browser](https://github.com/golang/go/wiki/WebAssembly#running-tests-in-the-browser)
 
 ## Tags
 
@@ -132,7 +133,7 @@ type MyType {
 
 Implemented originally for having a convenient way to attach structured data in the `details` field when creating a custom event and subsequently retrieve them at the event handler.
 
-See: https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Creating_and_triggering_events
+See: [Creating_and_triggering_events](https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Creating_and_triggering_events)
 
 ## TODO
 
