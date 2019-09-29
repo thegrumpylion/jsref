@@ -52,16 +52,14 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 		if tag.name != "" {
 			name = tag.name
 		}
-		if isPtr(ft) {
-			if !fv.IsValid() {
-				continue
-			}
-			fv = fv.Elem()
-			ft = ft.Elem()
-		}
 		jsVal := val.Get(name)
 		if !IsValid(jsVal) {
-			return nil
+			continue
+		}
+		if isPtr(ft) {
+			if fv.IsNil() {
+				fv.Set(reflect.New(ft.Elem()))
+			}
 		}
 		switch {
 		case isScalar(ft):

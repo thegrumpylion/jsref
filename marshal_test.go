@@ -1,6 +1,7 @@
 package jsref
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -142,4 +143,71 @@ func TestMarshalStruct(t *testing.T) {
 	for i := 0; i < list.Length(); i++ {
 		require.Equal(lst[i], list.Index(i).String())
 	}
+}
+
+func TestExample(t *testing.T) {
+	type addr struct {
+		Street string
+		Num    int
+	}
+	type user struct {
+		Name    string
+		Email   []string
+		IsAdmin bool
+		Limit   int
+		Addr    *addr
+	}
+	usr := &user{
+		Name:    "admin",
+		Email:   []string{"admin@domain", "root@domain"},
+		IsAdmin: true,
+		Limit:   9001,
+		Addr: &addr{
+			Street: "somewhere",
+			Num:    99,
+		},
+	}
+
+	usrjs, err := Marshal(usr)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("JS Values")
+	fmt.Println("---------")
+	fmt.Println("Name", usrjs.Get("Name").String())
+	fmt.Println("IsAdmin", usrjs.Get("IsAdmin").Bool())
+	fmt.Println("Limit", usrjs.Get("Limit").Int())
+	for i := 0; i < usrjs.Get("Email").Length(); i++ {
+		fmt.Println("Email", i, usrjs.Get("Email").Index(i))
+	}
+	fmt.Println("Addr.Street", usrjs.Get("Addr").Get("Street").String())
+	fmt.Println("Addr.Num", usrjs.Get("Addr").Get("Num").Int())
+	fmt.Println("---------")
+
+	usrjs.Set("Name", "user")
+	usrjs.Set("IsAdmin", false)
+	usrjs.Set("Limit", 100)
+	usrjs.Set("Email", []interface{}{"user@domain"})
+	usrjs.Get("Addr").Set("Street", "somewhere else")
+	usrjs.Get("Addr").Set("Num", 2)
+
+	usr = &user{}
+
+	err = Unmarshal(usr, usrjs)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("Go Values")
+	fmt.Println("---------")
+	fmt.Println("Name", usr.Name)
+	fmt.Println("IsAdmin", usr.IsAdmin)
+	fmt.Println("Limit", usr.Limit)
+	for i, e := range usr.Email {
+		fmt.Println("Email", i, e)
+	}
+	fmt.Println("Addr.Street", usr.Addr.Street)
+	fmt.Println("Addr.Num", usr.Addr.Num)
+	fmt.Println("---------")
 }
