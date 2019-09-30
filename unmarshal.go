@@ -8,8 +8,12 @@ import (
 
 // Unmarshal from js.Value
 func Unmarshal(i interface{}, val js.Value) error {
-	t := reflect.TypeOf(i)
 	v := reflect.ValueOf(i)
+	return unmarshal(v, val)
+}
+
+func unmarshal(v reflect.Value, val js.Value) error {
+	t := v.Type()
 	switch {
 	case isScalar(t):
 		return unmarshalScalar(v, val)
@@ -39,7 +43,6 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 		v = v.Elem()
 		t = t.Elem()
 	}
-	var err error
 	for i := 0; i < t.NumField(); i++ {
 		fld := t.Field(i)
 		fv := v.Field(i)
@@ -61,18 +64,7 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 				fv.Set(reflect.New(ft.Elem()))
 			}
 		}
-		switch {
-		case isScalar(ft):
-			err = unmarshalScalar(fv, jsVal)
-		case isArray(ft):
-			err = unmarshalArr(fv, jsVal)
-		case isMap(ft):
-			err = unmarshalMap(fv, jsVal)
-		case isStruct(ft):
-			err = unmarshalStruct(fv, jsVal)
-		default:
-			return fmt.Errorf("unknown type: %s", t.String())
-		}
+		err := unmarshal(fv, jsVal)
 		if err != nil {
 			return err
 		}
@@ -97,23 +89,10 @@ func unmarshalMap(v reflect.Value, val js.Value) error {
 	}
 	et := t.Elem()
 	m := reflect.MakeMap(t)
-	var err error
-
 	for _, key := range ObjectKeys(val) {
 		goVal := reflect.New(et).Elem()
 		jsVal := val.Get(key)
-		switch {
-		case isScalar(et):
-			err = unmarshalScalar(goVal, jsVal)
-		case isArray(et):
-			err = unmarshalArr(goVal, jsVal)
-		case isMap(et):
-			err = unmarshalMap(goVal, jsVal)
-		case isStruct(et):
-			err = unmarshalStruct(goVal, jsVal)
-		default:
-			return fmt.Errorf("unknown type: %s", t.String())
-		}
+		err := unmarshal(goVal, jsVal)
 		if err != nil {
 			return err
 		}
@@ -138,25 +117,12 @@ func unmarshalArr(v reflect.Value, val js.Value) error {
 		t = t.Elem()
 		v = v.Elem()
 	}
-	slc := reflect.MakeSlice(t, 0, 10)
-	et := t.Elem()
-	var err error
-
+	slc := reflect.MakeSlice(t, 0, val.Length())
+	te := t.Elem()
 	for i := 0; i < val.Length(); i++ {
 		jsVal := val.Index(i)
-		goVal := reflect.New(et).Elem()
-		switch {
-		case isScalar(et):
-			err = unmarshalScalar(goVal, jsVal)
-		case isArray(et):
-			err = unmarshalArr(goVal, jsVal)
-		case isMap(et):
-			err = unmarshalMap(goVal, jsVal)
-		case isStruct(et):
-			err = unmarshalStruct(goVal, jsVal)
-		default:
-			return fmt.Errorf("unknown type: %s", t.String())
-		}
+		goVal := reflect.New(te).Elem()
+		err := unmarshal(goVal, jsVal)
 		if err != nil {
 			return err
 		}

@@ -8,23 +8,27 @@ import (
 
 // Marshal to js.Value
 func Marshal(i interface{}) (js.Value, error) {
-	t := reflect.TypeOf(i)
 	v := reflect.ValueOf(i)
+	return marshal(v)
+}
+
+func marshal(v reflect.Value) (js.Value, error) {
+	t := v.Type()
 	switch {
 	case isScalar(t):
-		return scalarToJSValue(v)
+		return marshalScalar(v)
 	case isArray(t):
-		return arrayToJSValue(v)
+		return marshalArray(v)
 	case isMap(t):
-		return mapToJSValue(v)
+		return marshalMap(v)
 	case isStruct(t):
-		return structToJSValue(v)
+		return marshalStruct(v)
 	default:
 		return js.Null(), fmt.Errorf("unknown type: %s", t.String())
 	}
 }
 
-func structToJSValue(v reflect.Value) (js.Value, error) {
+func marshalStruct(v reflect.Value) (js.Value, error) {
 	t := v.Type()
 	if isPtr(t) {
 		if !v.IsValid() {
@@ -34,7 +38,6 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 		v = v.Elem()
 	}
 	m := map[string]interface{}{}
-	var err error
 	for i := 0; i < t.NumField(); i++ {
 		fld := t.Field(i)
 		fv := v.Field(i)
@@ -48,35 +51,25 @@ func structToJSValue(v reflect.Value) (js.Value, error) {
 			name = tag.name
 		}
 		if isPtr(ft) {
-			if !fv.IsValid() {
+			if fv.IsNil() {
 				continue
 			}
 			fv = fv.Elem()
-			ft = ft.Elem()
 		}
-		switch {
-		case isScalar(ft):
-			m[name], err = scalarToJSValue(fv)
-		case isArray(ft):
-			m[name], err = arrayToJSValue(fv)
-		case isMap(ft):
-			m[name], err = mapToJSValue(fv)
-		case isStruct(ft):
-			m[name], err = structToJSValue(fv)
-		default:
-			return js.Null(), fmt.Errorf("unknown type: %s", ft.String())
+		val, err := marshal(fv)
+		if err != nil {
+			return js.Null(), err
 		}
+		m[name] = val
 	}
-	if err != nil {
-		return js.Null(), err
-	}
+
 	return js.ValueOf(m), nil
 }
 
-func mapToJSValue(v reflect.Value) (js.Value, error) {
+func marshalMap(v reflect.Value) (js.Value, error) {
 	t := v.Type()
 	if isPtr(t) {
-		if !v.IsValid() {
+		if v.IsNil() {
 			return js.Null(), nil
 		}
 		t = t.Elem()
@@ -90,25 +83,16 @@ func mapToJSValue(v reflect.Value) (js.Value, error) {
 	var err error
 	for _, key := range v.MapKeys() {
 		val := v.MapIndex(key)
-		kn, err := scalarToJSValue(key)
+		kn, err := marshalScalar(key)
 		if err != nil {
 			return js.Null(), err
 		}
-		kname := kn.String()
-		et := t.Elem()
-		switch {
-		case isScalar(et):
-			m[kname], err = scalarToJSValue(val)
-		case isArray(et):
-			m[kname], err = arrayToJSValue(val)
-		case isMap(et):
-			m[kname], err = mapToJSValue(val)
-		case isStruct(et):
-			m[kname], err = structToJSValue(val)
-		default:
-			return js.Null(), fmt.Errorf("unknown type: %s", t.String())
+		name := kn.String()
+		ret, err := marshal(val)
+		if err != nil {
+			return js.Null(), err
 		}
-		_ = kname
+		m[name] = ret
 	}
 	if err != nil {
 		return js.Null(), err
@@ -116,30 +100,17 @@ func mapToJSValue(v reflect.Value) (js.Value, error) {
 	return js.ValueOf(m), nil
 }
 
-func arrayToJSValue(v reflect.Value) (js.Value, error) {
+func marshalArray(v reflect.Value) (js.Value, error) {
 	t := v.Type()
 	if isPtr(t) {
 		if !v.IsValid() {
 			return js.Null(), nil
 		}
-		t = t.Elem()
 		v = v.Elem()
 	}
 	arr := []interface{}{}
-	var err error
-	var val js.Value
-	et := t.Elem()
 	for i := 0; i < v.Len(); i++ {
-		switch {
-		case isScalar(et):
-			val, err = scalarToJSValue(v.Index(i))
-		case isArray(et):
-			val, err = arrayToJSValue(v.Index(i))
-		case isMap(et):
-			val, err = mapToJSValue(v.Index(i))
-		case isStruct(et):
-			val, err = structToJSValue(v.Index(i))
-		}
+		val, err := marshal(v.Index(i))
 		if err != nil {
 			return js.Null(), err
 		}
@@ -148,10 +119,12 @@ func arrayToJSValue(v reflect.Value) (js.Value, error) {
 	return js.ValueOf(arr), nil
 }
 
-func scalarToJSValue(v reflect.Value) (js.Value, error) {
+func marshalScalar(v reflect.Value) (js.Value, error) {
 	t := v.Type()
 	if isPtr(t) {
-		t = t.Elem()
+		if v.IsNil() {
+			return js.Null(), nil
+		}
 		v = v.Elem()
 	}
 	return js.ValueOf(v.Interface()), nil
