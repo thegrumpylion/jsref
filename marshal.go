@@ -75,9 +75,13 @@ func marshalMap(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
-	kt := t.Elem()
+	kt := t.Key()
 	if !isString(kt) {
 		return js.Null(), fmt.Errorf("map key must be string not %s", kt)
+	}
+	if t.Elem().String() == "interface{}" {
+		// already map[string]interface{} just return it
+		return js.ValueOf(v.Interface()), nil
 	}
 	m := map[string]interface{}{}
 	var err error
