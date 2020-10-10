@@ -49,7 +49,7 @@ func TestUnamrshalStruct(t *testing.T) {
 	out := &struct {
 		Ena  string
 		Dio  bool `jsref:"dio"`
-		Tria int
+		Tria uint
 	}{}
 	err := Unmarshal(out, obj)
 
@@ -58,6 +58,6 @@ func TestUnamrshalStruct(t *testing.T) {
 	require.Nil(err)
 	require.Equal("one", out.Ena)
 	require.Equal(true, out.Dio)
-	require.Equal(3, out.Tria)
+	require.Equal(uint(3), out.Tria)
 
 }

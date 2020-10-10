@@ -26,6 +26,16 @@ func IsNumber(v js.Value) bool {
 	return v.Type() == js.TypeNumber
 }
 
+// IsFunc checks if js Value is function
+func IsFunc(v js.Value) bool {
+	return v.Type() == js.TypeFunction
+}
+
+// IsScalar checks if js Value is bool, number or string
+func IsScalar(v js.Value) bool {
+	return IsBool(v) || IsString(v) || IsNumber(v)
+}
+
 // IsArray checks if js Value is array
 func IsArray(v js.Value) bool {
 	return v.Type() == js.TypeObject &&
@@ -69,8 +79,14 @@ func isInt(t reflect.Type) bool {
 		t.Kind() == reflect.Int8 ||
 		t.Kind() == reflect.Int16 ||
 		t.Kind() == reflect.Int32 ||
-		t.Kind() == reflect.Int64 ||
-		t.Kind() == reflect.Uint ||
+		t.Kind() == reflect.Int64
+}
+
+func isUint(t reflect.Type) bool {
+	if isPtr(t) {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.Uint ||
 		t.Kind() == reflect.Uint8 ||
 		t.Kind() == reflect.Uint16 ||
 		t.Kind() == reflect.Uint32 ||
@@ -115,7 +131,7 @@ func isArray(t reflect.Type) bool {
 }
 
 func isNumber(t reflect.Type) bool {
-	return isInt(t) || isFloat(t)
+	return isInt(t) || isUint(t) || isFloat(t)
 }
 
 func isScalar(t reflect.Type) bool {

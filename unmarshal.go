@@ -150,6 +150,8 @@ func unmarshalScalar(v reflect.Value, val js.Value) error {
 		v.SetString(val.String())
 	case isInt(t):
 		v.SetInt(int64(val.Int()))
+	case isUint(t):
+		v.SetUint(uint64(val.Int()))
 	case isFloat(t):
 		v.SetFloat(val.Float())
 	default:
