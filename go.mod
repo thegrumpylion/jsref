@@ -1,4 +1,4 @@
-module github.com/thegrumpylion/jsref
+module github.com/asicerik/jsref
 
 go 1.13
 
