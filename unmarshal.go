@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"syscall/js"
+	"time"
 )
 
 // Unmarshal from js.Value
@@ -32,9 +33,6 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 	if !IsValid(val) {
 		return nil
 	}
-	if !IsObject(val) {
-		return fmt.Errorf("val must be object for struct")
-	}
 	t := v.Type()
 	if isPtr(t) {
 		if v.IsNil() {
@@ -43,6 +41,20 @@ func unmarshalStruct(v reflect.Value, val js.Value) error {
 		v = v.Elem()
 		t = t.Elem()
 	}
+	// Handle time.Time as a special case
+	switch v.Interface().(type) {
+	case time.Time:
+		timeVal, err := time.Parse(time.RFC3339, val.String())
+		if err != nil {
+			return err
+		}
+		v.Set(reflect.ValueOf(timeVal))
+		return nil
+	}
+	if !IsObject(val) {
+		return fmt.Errorf("val must be object for struct. val=%v", val)
+	}
+
 	for i := 0; i < t.NumField(); i++ {
 		fld := t.Field(i)
 		fv := v.Field(i)
@@ -142,6 +154,10 @@ func unmarshalScalar(v reflect.Value, val js.Value) error {
 			v.Set(reflect.New(t.Elem()))
 		}
 		v = v.Elem()
+	}
+	// Skip unexported fields
+	if !v.CanInterface() {
+		return nil
 	}
 	switch {
 	case isBool(t):
