@@ -3,6 +3,7 @@ package jsref
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -121,14 +122,20 @@ func TestMarshalStruct(t *testing.T) {
 	require := require.New(t)
 
 	lst := []string{"sdf", "eeee"}
+	testTime := time.Now()
+	testTimeString := testTime.Format(time.RFC3339)
 	s := struct {
-		Name string
-		Age  int
-		List []string
+		Name       string
+		Age        int
+		List       []string
+		Time       time.Time
+		unexported string
 	}{
-		Name: "tester",
-		Age:  666,
-		List: lst,
+		Name:       "tester",
+		Age:        666,
+		List:       lst,
+		Time:       testTime,
+		unexported: "skip me",
 	}
 	out, err := Marshal(s)
 
@@ -143,6 +150,11 @@ func TestMarshalStruct(t *testing.T) {
 	for i := 0; i < list.Length(); i++ {
 		require.Equal(lst[i], list.Index(i).String())
 	}
+	timeJS := out.Get("Time")
+	require.Equal(testTimeString, timeJS.String())
+	unexported := out.Get("unexported")
+	require.True(unexported.IsUndefined())
+
 }
 
 func TestExample(t *testing.T) {

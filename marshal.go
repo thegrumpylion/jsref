@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"syscall/js"
+	"time"
 )
 
 // Marshal to js.Value
@@ -37,12 +38,23 @@ func marshalStruct(v reflect.Value) (js.Value, error) {
 		t = t.Elem()
 		v = v.Elem()
 	}
+
+	// Handle time.Time as a special case
+	switch timeVal := v.Interface().(type) {
+	case time.Time:
+		return js.ValueOf(timeVal.Format(time.RFC3339)), nil
+	}
+
 	m := map[string]interface{}{}
 	for i := 0; i < t.NumField(); i++ {
 		fld := t.Field(i)
 		fv := v.Field(i)
 		ft := fld.Type
 		name := fld.Name
+		// Skip unexported fields
+		if !fv.CanInterface() {
+			continue
+		}
 		tag := parseTag(fld.Tag)
 		if tag.ignore {
 			continue

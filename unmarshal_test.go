@@ -3,6 +3,7 @@ package jsref
 import (
 	"syscall/js"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -41,15 +42,21 @@ func TestUnamrshalMap(t *testing.T) {
 }
 
 func TestUnamrshalStruct(t *testing.T) {
+	testTime := time.Now()
+	testTimeString := testTime.Format(time.RFC3339)
 	obj := js.ValueOf(map[string]interface{}{
-		"Ena":  "one",
-		"dio":  true,
-		"Tria": 3,
+		"Ena":        "one",
+		"dio":        true,
+		"Tria":       3,
+		"Time":       testTimeString,
+		"unexported": "skip me",
 	})
 	out := &struct {
-		Ena  string
-		Dio  bool `jsref:"dio"`
-		Tria uint
+		Ena        string
+		Dio        bool `jsref:"dio"`
+		Tria       uint
+		Time       time.Time
+		unexported string
 	}{}
 	err := Unmarshal(out, obj)
 
@@ -59,5 +66,6 @@ func TestUnamrshalStruct(t *testing.T) {
 	require.Equal("one", out.Ena)
 	require.Equal(true, out.Dio)
 	require.Equal(uint(3), out.Tria)
-
+	timeOutString := out.Time.Format(time.RFC3339)
+	require.Equal(testTimeString, timeOutString)
 }
